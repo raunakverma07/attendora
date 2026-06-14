@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AttendX</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#04060f;font-family:'DM Sans',sans-serif;color:#e8eaf0;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#00d4ff;border-radius:2px}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;animation:orbf 20s ease-in-out infinite}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,255,0.10),transparent 70%);top:-5%;left:-10%}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(155,92,255,0.09),transparent 70%);top:40%;right:-8%;animation-duration:24s}
+.orb3{width:350px;height:350px;background:radial-gradient(circle,rgba(255,0,128,0.06),transparent 70%);bottom:5%;left:15%;animation-duration:17s}
+#app{position:relative;z-index:1;min-height:100vh}
+@keyframes orbf{0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-40px)}66%{transform:translate(-30px,30px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* Reusable */
+.page{min-height:100vh;background:#04060f;color:#e8eaf0}
+.topbar{height:60px;background:rgba(4,6,15,0.92);border-bottom:1px solid rgba(0,212,255,0.1);backdrop-filter:blur(24px);display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-icon{width:33px;height:33px;border-radius:9px;background:linear-gradient(135deg,#00d4ff,#9b5cff);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 16px rgba(0,212,255,0.5)}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;background:linear-gradient(135deg,#00d4ff,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card{background:rgba(255,255,255,0.028);border:1px solid rgba(0,212,255,0.14);border-radius:16px;padding:1.4rem;backdrop-filter:blur(12px)}
+.card.neon{border-color:rgba(0,212,255,0.22)}
+.inp{width:100%;padding:11px 14px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.18);border-radius:10px;color:#e8eaf0;font-size:0.92rem;outline:none;font-family:'DM Sans',sans-serif;transition:border 0.2s,box-shadow 0.2s;caret-color:#00d4ff}
+.inp:focus{border-color:#00d4ff;box-shadow:0 0 0 2px rgba(0,212,255,0.12)}
+.btn{padding:12px 22px;background:linear-gradient(135deg,#00d4ff,#9b5cff);border:none;border-radius:10px;color:#04060f;font-weight:700;font-size:0.92rem;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 0 16px rgba(0,212,255,0.35);transition:transform 0.2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{transform:scale(1.03)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;border:1px solid rgba(0,212,255,0.28);color:#00d4ff;box-shadow:none}
+.btn.ghost:hover{background:rgba(0,212,255,0.07)}
+.btn.danger{background:linear-gradient(135deg,#ff453a,#c43030);box-shadow:0 0 16px rgba(255,69,58,0.3)}
+.btn.full{width:100%;justify-content:center}
+.btn.sm{padding:7px 15px;font-size:0.82rem}
+.lbl{font-size:0.72rem;font-weight:600;color:#00d4ff;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;opacity:0.7}
+.fld{margin-bottom:0.9rem}
+.err{background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.28);border-radius:9px;padding:9px 13px;color:#ff453a;font-size:0.83rem;margin-top:10px}
+.ok{background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.25);border-radius:9px;padding:9px 13px;color:#39ff14;font-size:0.83rem;margin-top:10px}
+.spinner{width:24px;height:24px;border:2px solid rgba(0,212,255,0.15);border-top-color:#00d4ff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:2rem}
+.credit{text-align:center;margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid rgba(0,212,255,0.08);font-size:0.73rem;font-weight:600;background:linear-gradient(135deg,#00d4ff,#9b5cff,#ff0080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+input[type=date]{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.18);border-radius:9px;padding:8px 12px;color:#e8eaf0;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(0.4)}
+.tab-btn{padding:7px 14px;border-radius:9px;font-size:0.83rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.18s;background:rgba(255,255,255,0.04);border:1px solid rgba(0,212,255,0.14);color:rgba(232,234,240,0.48)}
+.tab-btn.active{background:linear-gradient(135deg,#00d4ff,#9b5cff);border:none;color:#04060f;box-shadow:0 0 16px rgba(0,212,255,0.28)}
+.stu-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.025);border-radius:10px;border:1px solid rgba(0,212,255,0.14);flex-wrap:wrap;gap:7px;margin-bottom:0.4rem}
+.att-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;user-select:none;transition:all 0.13s;margin-bottom:0.38rem}
+.att-row.present{background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2)}
+.att-row.absent{background:rgba(255,255,255,0.02);border:1px solid rgba(0,212,255,0.06)}
+.chk{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.13s}
+.chk.on{background:#39ff14;border:2px solid #39ff14;box-shadow:0 0 8px rgba(57,255,20,0.5)}
+.chk.off{background:transparent;border:2px solid rgba(232,234,240,0.18)}
+.sum-card{border-radius:12px;padding:1rem;margin-bottom:0.5rem}
+.nline{height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);margin:0 2rem}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div id="app"></div>
+
+<!-- Firebase compat — synchronous, no modules needed -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── INIT ──
+firebase.initializeApp({
+  apiKey:"AIzaSyAe_GQmiy1ET8rrkXV_bGdyzqTVLv21YWo",
+  authDomain:"attendx-hsc.firebaseapp.com",
+  projectId:"attendx-hsc",
+  storageBucket:"attendx-hsc.firebasestorage.app",
+  messagingSenderId:"600835179521",
+  appId:"1:600835179521:web:7797e0bebe0fd3182e2c00"
+});
+const db = firebase.firestore();
+
+// ── UTILS ──
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const code6=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+const todayStr=()=>new Date().toISOString().split("T")[0];
+const $=id=>document.getElementById(id);
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;return e;};
+const pct=(sid,att,hols)=>{
+  const h=new Set(hols||[]);
+  const days=Object.keys(att||{}).filter(d=>!h.has(d));
+  if(!days.length)return null;
+  return Math.round(days.filter(d=>(att[d]||{})[sid]).length/days.length*100);
+};
+const grade=p=>{
+  if(p===null)return null;
+  if(p>=85)return{c:"#39ff14",bg:"rgba(57,255,20,0.1)",b:"rgba(57,255,20,0.3)",t:"Safe 🟢"};
+  if(p>=65)return{c:"#ffd60a",bg:"rgba(255,214,10,0.1)",b:"rgba(255,214,10,0.3)",t:"Average 🟡"};
+  if(p>=40)return{c:"#ff9500",bg:"rgba(255,149,0,0.1)",b:"rgba(255,149,0,0.3)",t:"Danger 🟠"};
+  return{c:"#ff453a",bg:"rgba(255,69,58,0.1)",b:"rgba(255,69,58,0.3)",t:"Critical 🔴"};
+};
+
+// ── FIREBASE OPS ──
+const FB={
+  async getTeacher(id){const s=await db.collection("teachers").doc(id).get();return s.exists?s.data():null;},
+  async saveTeacher(t){await db.collection("teachers").doc(t.id).set(t);},
+  async saveClass(tid,cls){await db.collection("teachers").doc(tid).collection("classes").doc(cls.id).set(cls);},
+  async deleteClass(tid,cid){await db.collection("teachers").doc(tid).collection("classes").doc(cid).delete();},
+  watchClasses(tid,cb){return db.collection("teachers").doc(tid).collection("classes").onSnapshot(s=>cb(s.docs.map(d=>d.data())));},
+  async getAllClasses(){
+    const ts=await db.collection("teachers").get();
+    let all=[];
+    for(const t of ts.docs){const cs=await db.collection("teachers").doc(t.id).collection("classes").get();all=[...all,...cs.docs.map(d=>d.data())];}
+    return all;
+  }
+};
+
+// ── STATE ──
+let state={page:"landing",teacher:null,openCls:null,openTid:null,unsub:null};
+function nav(page,extra={}){
+  if(state.unsub){state.unsub();state.unsub=null;}
+  state={...state,page,...extra};
+  render();
+}
+
+// ── TOPBAR ──
+function topbar(onHome,rightHTML){
+  return `<div class="topbar">
+    <div class="logo" onclick="(${onHome})()">
+      <div class="logo-icon">🎓</div>
+      <span class="logo-text">AttendX</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px">${rightHTML||""}</div>
+  </div>`;
+}
+
+// ── PAGES ──
+
+/* LANDING */
+function renderLanding(){
+  const features=[
+    ["🎯","Smart Attendance","Checkbox-based, all absent by default. Mark present, save. Done in 60 seconds."],
+    ["☁️","Cloud Sync","Firebase Firestore — access from any device, any browser."],
+    ["🏖️","Holiday Marking","One tap marks holiday. Auto-excluded from % calculation."],
+    ["📊","Neon Grading","Live colour grade per student — Safe, Average, Danger, Critical."],
+    ["📅","Date Search","Pick any date to see who was present or absent."],
+    ["➕","Add Anytime","Add students mid-semester. Old records untouched."],
+    ["🔄","Move Students","Wrong class? Move in one tap."],
+    ["🔐","Student Self-Check","Class code + name → see own attendance. No login needed."],
+    ["📱","Works Everywhere","Phone, tablet, laptop — any browser."],
+  ];
+  const grades=[
+    ["🟢","Safe","85%+","#39ff14","rgba(57,255,20,0.08)","rgba(57,255,20,0.25)","Regular. No action needed."],
+    ["🟡","Average","65–84%","#ffd60a","rgba(255,214,10,0.08)","rgba(255,214,10,0.25)","Slipping. Keep an eye."],
+    ["🟠","Danger","40–64%","#ff9500","rgba(255,149,0,0.08)","rgba(255,149,0,0.25)","Needs attention."],
+    ["🔴","Critical","<40%","#ff453a","rgba(255,69,58,0.08)","rgba(255,69,58,0.25)","Action required urgently."],
+  ];
+  $("app").innerHTML=`
+  <div style="background:#04060f;color:#e8eaf0;overflow-x:hidden">
+  <style>
+    .nl{color:rgba(232,234,240,0.5);text-decoration:none;font-size:0.87rem;font-weight:500;transition:color 0.2s}.nl:hover{color:#00d4ff}
+    .fc{transition:transform 0.25s,border-color 0.25s,box-shadow 0.25s;background:rgba(255,255,255,0.028);border:1px solid rgba(0,212,255,0.14);border-radius:14px;padding:1.3rem;backdrop-filter:blur(10px)}
+    .fc:hover{transform:translateY(-6px);border-color:rgba(0,212,255,0.35);box-shadow:0 16px 40px rgba(0,212,255,0.1)}
+    .gc{transition:transform 0.25s;border-radius:14px;padding:1.4rem;text-align:center}.gc:hover{transform:scale(1.05)}
+    .ht{background:linear-gradient(140deg,#fff 10%,#00d4ff 40%,#9b5cff 65%,#ff0080 100%);background-size:300% 300%;animation:gradShift 6s ease infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .lnav{position:fixed;top:0;left:0;right:0;z-index:100;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.6rem;transition:all 0.35s}
+    .lnav.scrolled{background:rgba(4,6,15,0.96);backdrop-filter:blur(24px);border-bottom:1px solid rgba(0,212,255,0.1)}
+    .hbtn{transition:transform 0.2s}.hbtn:hover{transform:scale(1.03)}
+    .sr{transition:border-color 0.2s;background:rgba(255,255,255,0.028);border:1px solid rgba(0,212,255,0.14);border-radius:13px;padding:1rem 1.2rem;display:flex;gap:1rem;align-items:flex-start;margin-bottom:0.65rem}
+    .sr:hover{border-color:rgba(0,212,255,0.25)}
+  </style>
+  <nav class="lnav" id="lnav">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#00d4ff,#9b5cff);display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 20px rgba(0,212,255,0.5)">🎓</div>
+      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#00d4ff,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">AttendX</span>
+    </div>
+    <div style="display:flex;gap:1.3rem"><a href="#features" class="nl">Features</a><a href="#grading" class="nl">Grading</a><a href="#howto" class="nl">How to Use</a></div>
+    <div style="display:flex;gap:0.5rem">
+      <button onclick="nav('student')" class="hbtn" style="padding:7px 16px;background:transparent;border:1px solid rgba(0,212,255,0.28);border-radius:9px;color:#00d4ff;font-size:0.83rem;font-weight:600;cursor:pointer">🎓 Student</button>
+      <button onclick="nav('login')" class="hbtn" style="padding:7px 16px;background:linear-gradient(135deg,#00d4ff,#9b5cff);border:none;border-radius:9px;color:#04060f;font-size:0.83rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 0 16px rgba(0,212,255,0.4)">🔐 Teacher</button>
+    </div>
+  </nav>
+  <!-- HERO -->
+  <section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 1.5rem 4rem">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.22);border-radius:100px;padding:5px 16px;font-size:0.72rem;color:#00d4ff;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.8rem">
+      <span style="width:7px;height:7px;border-radius:50%;background:#00d4ff;display:inline-block;animation:blink 2s infinite;box-shadow:0 0 8px #00d4ff"></span>Cloud-Powered · Smart Attendance
+    </div>
+    <h1 class="ht" style="font-family:'Syne',sans-serif;font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;line-height:1.08;margin-bottom:1.4rem;max-width:760px">
+      Attendance Management,<br>Reimagined for Classrooms.
+    </h1>
+    <p style="font-size:1.05rem;color:rgba(232,234,240,0.5);max-width:510px;line-height:1.8;margin-bottom:2.6rem">
+      Mark 100+ students in seconds. Neon colour-grade every student. Cloud-synced across all devices.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;max-width:390px;margin-bottom:3rem">
+      <button onclick="nav('setup')" class="hbtn" style="padding:14px;background:linear-gradient(135deg,#00d4ff,#9b5cff);border:none;border-radius:12px;color:#04060f;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 0 24px rgba(0,212,255,0.4)">🧑‍🏫 New Teacher? Create Account</button>
+      <button onclick="nav('login')" style="padding:14px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.3);border-radius:12px;color:#00d4ff;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;cursor:pointer" onmouseover="this.style.background='rgba(0,212,255,0.12)'" onmouseout="this.style.background='rgba(0,212,255,0.06)'">🔐 Already have an Account? Sign In</button>
+      <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15))"></div><span style="font-size:0.75rem;color:rgba(232,234,240,0.25)">or</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(0,212,255,0.15),transparent)"></div></div>
+      <button onclick="nav('student')" style="padding:13px;background:transparent;border:1px solid rgba(155,92,255,0.25);border-radius:12px;color:rgba(232,234,240,0.5);font-weight:600;font-size:0.93rem;cursor:pointer" onmouseover="this.style.borderColor='rgba(155,92,255,0.5)';this.style.color='#9b5cff'" onmouseout="this.style.borderColor='rgba(155,92,255,0.25)';this.style.color='rgba(232,234,240,0.5)'">🎓 Student — Check My Attendance</button>
+    </div>
+  </section>
+  <div class="nline"></div>
+  <!-- FEATURES -->
+  <section id="features" style="padding:5rem 1.5rem">
+    <div style="max-width:980px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:3rem">
+        <span style="font-size:0.7rem;font-weight:700;color:#00d4ff;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);border-radius:20px;padding:2px 9px">FEATURES</span>
+        <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-top:0.8rem;background:linear-gradient(135deg,#e8eaf0,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Everything You Need</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem">
+        ${features.map(f=>`<div class="fc"><div style="font-size:1.8rem;margin-bottom:0.6rem">${f[0]}</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;margin-bottom:0.3rem;color:#00d4ff">${f[1]}</div><div style="font-size:0.82rem;color:rgba(232,234,240,0.5);line-height:1.7">${f[2]}</div></div>`).join("")}
+      </div>
+    </div>
+  </section>
+  <div class="nline"></div>
+  <!-- GRADING -->
+  <section id="grading" style="padding:5rem 1.5rem">
+    <div style="max-width:980px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:3rem">
+        <span style="font-size:0.7rem;font-weight:700;color:#9b5cff;background:rgba(155,92,255,0.1);border:1px solid rgba(155,92,255,0.25);border-radius:20px;padding:2px 9px">GRADING</span>
+        <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-top:0.8rem;background:linear-gradient(135deg,#e8eaf0,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Neon Colour Grades</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">
+        ${grades.map(g=>`<div class="gc" style="background:${g[4]};border:1px solid ${g[5]}"><div style="font-size:2rem;margin-bottom:0.5rem">${g[0]}</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:${g[3]};text-shadow:0 0 12px ${g[3]}50">${g[1]}</div><div style="font-size:0.78rem;font-weight:600;color:${g[3]};margin:0.3rem 0;opacity:0.8">${g[2]}</div><div style="font-size:0.76rem;color:rgba(232,234,240,0.5)">${g[6]}</div></div>`).join("")}
+      </div>
+    </div>
+  </section>
+  <div class="nline"></div>
+  <!-- HOW TO -->
+  <section id="howto" style="padding:5rem 1.5rem">
+    <div style="max-width:700px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:3rem">
+        <span style="font-size:0.7rem;font-weight:700;color:#ff0080;background:rgba(255,0,128,0.1);border:1px solid rgba(255,0,128,0.25);border-radius:20px;padding:2px 9px">HOW TO USE</span>
+        <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-top:0.8rem;background:linear-gradient(135deg,#e8eaf0,#ff0080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">For Teachers</h2>
+      </div>
+      ${[["01","One-time Setup","Click 'New Teacher', enter name, create ID & password. 30 seconds."],["02","Create a Class","Dashboard → '+ New Class' → name it. Auto 6-char code generated."],["03","Add Students","Open class → Students tab → type names. Add more anytime."],["04","Daily Attendance","Attendance tab → pick date → tick present → Save."],["05","Mark Holidays","Tap 'Mark Holiday'. Excluded from % automatically."],["06","View Reports","Summary tab → colour grade per student. Date Search → any date."]].map(s=>`<div class="sr"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:#00d4ff;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.18);border-radius:8px;padding:4px 8px;flex-shrink:0">${s[0]}</div><div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;margin-bottom:0.2rem">${s[1]}</div><div style="font-size:0.8rem;color:rgba(232,234,240,0.5);line-height:1.7">${s[2]}</div></div></div>`).join("")}
+    </div>
+  </section>
+  <footer style="border-top:1px solid rgba(0,212,255,0.08);padding:2.5rem 1.5rem;text-align:center">
+    <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.14);border-radius:100px;padding:8px 20px;margin-bottom:0.8rem">
+      <span>⚡</span><span style="font-family:'Syne',sans-serif;font-size:0.81rem;font-weight:700;background:linear-gradient(135deg,#00d4ff,#9b5cff,#ff0080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Crafted by Raunak</span>
+      <span style="width:1px;height:14px;background:rgba(0,212,255,0.25);display:inline-block"></span><span style="font-size:0.76rem;color:rgba(232,234,240,0.25)">Holkar Science College</span>
+    </div>
+    <div style="font-size:0.76rem;color:rgba(232,234,240,0.2)">B.Sc CS · Data Science · AttendX © 2026</div>
+  </footer>
+  </div>`;
+  // Scroll nav effect
+  window.onscroll=()=>{const n=$("lnav");if(n)n.classList.toggle("scrolled",window.scrollY>30);};
+}
+
+/* SETUP */
+function renderSetup(){
+  $("app").innerHTML=topbar("()=>nav('landing')",`<button class="btn ghost sm" onclick="nav('landing')">← Home</button>`)+`
+  <div class="center">
+  <div class="card neon" style="width:100%;max-width:430px">
+    <div style="text-align:center;margin-bottom:1.6rem">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem">👋</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#00d4ff,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">First Time Setup</h2>
+      <p style="color:rgba(232,234,240,0.5);font-size:0.84rem;margin-top:4px">Create your teacher account — cloud saved!</p>
+    </div>
+    <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.18);border-radius:10px;padding:8px 13px;margin-bottom:1.2rem;font-size:0.8rem;color:rgba(0,212,255,0.85)">
+      ☁️ Data stored on Firebase — accessible from any device!
+    </div>
+    <div class="fld"><div class="lbl">Your Name</div><input class="inp" id="s-name" placeholder="e.g. Dr. Sharma" autofocus/></div>
+    <div class="fld"><div class="lbl">Teacher ID (min 4 chars)</div><input class="inp" id="s-id" placeholder="e.g. sharma2024"/></div>
+    <div class="fld"><div class="lbl">Password (min 6 chars)</div><input class="inp" id="s-pw" type="password" placeholder="Password"/></div>
+    <div class="fld"><div class="lbl">Confirm Password</div><input class="inp" id="s-pw2" type="password" placeholder="Confirm password"/></div>
+    <div id="s-err"></div>
+    <div style="margin-top:1.1rem;display:flex;flex-direction:column;gap:0.55rem">
+      <button class="btn full" id="s-btn" onclick="doSetup()">Create Account →</button>
+      <button class="btn ghost full" onclick="nav('landing')">← Back</button>
+    </div>
+    <div class="credit">⚡ by Raunak · Holkar Science College</div>
+  </div></div>`;
+}
+async function doSetup(){
+  const name=$("s-name").value.trim(),id=$("s-id").value.trim(),pw=$("s-pw").value,pw2=$("s-pw2").value;
+  const errEl=$("s-err"); errEl.innerHTML="";
+  if(!name)return errEl.innerHTML=`<div class="err">⚠️ Enter your name.</div>`;
+  if(id.length<4)return errEl.innerHTML=`<div class="err">⚠️ Teacher ID must be at least 4 characters.</div>`;
+  if(pw.length<6)return errEl.innerHTML=`<div class="err">⚠️ Password must be at least 6 characters.</div>`;
+  if(pw!==pw2)return errEl.innerHTML=`<div class="err">⚠️ Passwords do not match.</div>`;
+  const btn=$("s-btn"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Creating...`;
+  try{
+    const ex=await FB.getTeacher(id);
+    if(ex){btn.disabled=false;btn.innerHTML="Create Account →";return errEl.innerHTML=`<div class="err">⚠️ This Teacher ID is already taken.</div>`;}
+    const t={name,id,pw};
+    await FB.saveTeacher(t);
+    state.teacher=t; nav("dashboard");
+  }catch(e){btn.disabled=false;btn.innerHTML="Create Account →";errEl.innerHTML=`<div class="err">⚠️ Connection failed. Check internet.</div>`;}
+}
+
+/* LOGIN */
+function renderLogin(tab="teacher"){
+  $("app").innerHTML=topbar("()=>nav('landing')",`<button class="btn ghost sm" onclick="nav('landing')">← Home</button>`)+`
+  <div class="center">
+  <div style="width:100%;max-width:430px">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#00d4ff,#9b5cff);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 0.8rem;box-shadow:0 0 24px rgba(0,212,255,0.45)">🎓</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;background:linear-gradient(135deg,#00d4ff,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Welcome to AttendX</h2>
+      <p style="color:rgba(232,234,240,0.5);font-size:0.84rem;margin-top:4px">Select who you are to continue</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem">
+      <button onclick="renderLogin('teacher')" style="flex:1;padding:11px 8px;background:${tab==='teacher'?'linear-gradient(135deg,#00d4ff,#9b5cff)':'rgba(255,255,255,0.04)'};border:${tab==='teacher'?'none':'1px solid rgba(0,212,255,0.14)'};border-radius:10px;color:${tab==='teacher'?'#04060f':'rgba(232,234,240,0.5)'};font-weight:700;font-size:0.88rem;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:${tab==='teacher'?'0 0 16px rgba(0,212,255,0.3)':'none'}">🔐 Teacher Login</button>
+      <button onclick="renderLogin('student')" style="flex:1;padding:11px 8px;background:${tab==='student'?'linear-gradient(135deg,#00d4ff,#9b5cff)':'rgba(255,255,255,0.04)'};border:${tab==='student'?'none':'1px solid rgba(0,212,255,0.14)'};border-radius:10px;color:${tab==='student'?'#04060f':'rgba(232,234,240,0.5)'};font-weight:700;font-size:0.88rem;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:${tab==='student'?'0 0 16px rgba(0,212,255,0.3)':'none'}">🎓 Student View</button>
+    </div>
+    ${tab==="teacher"?`
+    <div class="card neon">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:1.1rem"><span style="font-size:1.2rem">🔐</span><div><div style="font-family:'Syne',sans-serif;font-weight:700">Teacher Login</div><div style="font-size:0.73rem;color:rgba(232,234,240,0.5)">Access your cloud dashboard</div></div></div>
+      <div class="fld"><div class="lbl">Teacher ID</div><input class="inp" id="l-id" placeholder="Enter your teacher ID" autofocus/></div>
+      <div class="fld"><div class="lbl">Password</div><input class="inp" id="l-pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div id="l-err"></div>
+      <div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem">
+        <button class="btn full" id="l-btn" onclick="doLogin()">Sign In →</button>
+        <button onclick="nav('setup')" style="background:none;border:none;color:rgba(0,212,255,0.55);font-size:0.82rem;cursor:pointer;padding:4px 0;font-family:'DM Sans',sans-serif" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='rgba(0,212,255,0.55)'">New teacher? Create an account →</button>
+      </div>
+    </div>`:`
+    <div class="card neon">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:1.1rem"><span style="font-size:1.2rem">🎓</span><div><div style="font-family:'Syne',sans-serif;font-weight:700">Check My Attendance</div><div style="font-size:0.73rem;color:rgba(232,234,240,0.5)">No login needed — just 2 details</div></div></div>
+      <div class="fld"><div class="lbl">Class Code</div><input class="inp" id="sc-code" placeholder="e.g. ABC123" autofocus oninput="this.value=this.value.toUpperCase()"/></div>
+      <div class="fld"><div class="lbl">Your Full Name (exact)</div><input class="inp" id="sc-name" placeholder="Enter your name" onkeydown="if(event.key==='Enter')doStudentCheck()"/></div>
+      <div id="sc-err"></div>
+      <div style="margin-top:1rem"><button class="btn full" id="sc-btn" onclick="doStudentCheck()">Check Attendance →</button></div>
+      <div id="sc-res"></div>
+    </div>`}
+    <div class="credit">⚡ by Raunak · Holkar Science College</div>
+  </div></div>`;
+}
+async function doLogin(){
+  const id=$("l-id").value.trim(),pw=$("l-pw").value;
+  const err=$("l-err");err.innerHTML="";
+  if(!id||!pw)return err.innerHTML=`<div class="err">⚠️ Fill in both fields.</div>`;
+  const btn=$("l-btn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Signing in...`;
+  try{
+    const t=await FB.getTeacher(id);
+    if(t&&pw===t.pw){state.teacher=t;nav("dashboard");}
+    else{btn.disabled=false;btn.innerHTML="Sign In →";err.innerHTML=`<div class="err">⚠️ Invalid ID or password.</div>`;}
+  }catch{btn.disabled=false;btn.innerHTML="Sign In →";err.innerHTML=`<div class="err">⚠️ Connection failed.</div>`;}
+}
+async function doStudentCheck(){
+  const code=$("sc-code").value.trim().toUpperCase(),name=$("sc-name").value.trim();
+  const err=$("sc-err"),res=$("sc-res");err.innerHTML="";res.innerHTML="";
+  if(!code||!name)return err.innerHTML=`<div class="err">⚠️ Fill in both fields.</div>`;
+  const btn=$("sc-btn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Searching...`;
+  try{
+    const all=await FB.getAllClasses();
+    const cls=all.find(c=>c.code===code);
+    if(!cls){btn.disabled=false;btn.innerHTML="Check Attendance →";return err.innerHTML=`<div class="err">⚠️ Class code not found.</div>`;}
+    const stu=cls.students.find(s=>s.name.toLowerCase()===name.toLowerCase());
+    if(!stu){btn.disabled=false;btn.innerHTML="Check Attendance →";return err.innerHTML=`<div class="err">⚠️ Name not found. Enter exact name as registered.</div>`;}
+    const p=pct(stu.id,cls.att,cls.hols),g=grade(p);
+    const hset=new Set(cls.hols||[]);
+    const allD=Object.keys(cls.att||{}).filter(d=>!hset.has(d)).sort((a,b)=>b.localeCompare(a));
+    const presD=allD.filter(d=>(cls.att[d]||{})[stu.id]);
+    res.innerHTML=`<div style="margin-top:1rem;animation:fadeUp 0.4s ease both">
+      <div style="background:${g?g.bg:'rgba(0,212,255,0.06)'};border:1px solid ${g?g.b:'rgba(0,212,255,0.22)'};border-radius:13px;padding:1rem;text-align:center;margin-bottom:0.75rem">
+        <div style="font-size:0.75rem;color:rgba(232,234,240,0.5);margin-bottom:2px">${cls.name}</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;margin-bottom:0.5rem">${stu.name}</div>
+        ${p!==null?`<div style="font-size:2.5rem;font-weight:800;font-family:'Syne',sans-serif;color:${g.c};text-shadow:0 0 20px ${g.c}60">${p}%</div><div style="display:inline-block;background:${g.bg};border:1px solid ${g.b};border-radius:7px;padding:2px 12px;color:${g.c};font-weight:700;font-size:0.81rem;margin-top:0.3rem">${g.t}</div>`:`<div style="color:rgba(232,234,240,0.25);font-size:0.84rem">No data yet</div>`}
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.7rem">
+        ${[{v:presD.length,l:"Present",c:"#39ff14",bg:"rgba(57,255,20,0.08)",b:"rgba(57,255,20,0.2)"},{v:allD.length-presD.length,l:"Absent",c:"#ff453a",bg:"rgba(255,69,58,0.08)",b:"rgba(255,69,58,0.2)"},{v:allD.length,l:"Total",c:"#00d4ff",bg:"rgba(0,212,255,0.07)",b:"rgba(0,212,255,0.2)"}].map(x=>`<div style="background:${x.bg};border:1px solid ${x.b};border-radius:8px;padding:6px 8px;text-align:center;flex:1"><div style="font-size:1rem;font-weight:700;color:${x.c}">${x.v}</div><div style="font-size:0.67rem;color:rgba(232,234,240,0.5)">${x.l}</div></div>`).join("")}
+      </div>
+      <div style="max-height:170px;overflow-y:auto;display:flex;flex-direction:column;gap:0.27rem">
+        ${allD.map(d=>{const pres=presD.includes(d);return`<div style="display:flex;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,0.025);border-radius:7px"><span style="font-size:0.79rem;color:rgba(232,234,240,0.5)">${d}</span><span style="font-size:0.75rem;font-weight:600;color:${pres?'#39ff14':'#ff453a'}">${pres?"✅ Present":"❌ Absent"}</span></div>`;}).join("")}
+      </div>
+    </div>`;
+    btn.disabled=false;btn.innerHTML="Check Attendance →";
+  }catch(e){btn.disabled=false;btn.innerHTML="Check Attendance →";err.innerHTML=`<div class="err">⚠️ Failed. Check internet.</div>`;}
+}
+
+/* DASHBOARD */
+let _clsUnsub=null;
+function renderDashboard(){
+  $("app").innerHTML=topbar("()=>nav('landing')",`
+    <span style="font-size:0.7rem;font-weight:700;color:#00d4ff;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);border-radius:20px;padding:2px 9px">👤 ${state.teacher.name}</span>
+    <button onclick="nav('landing');state.teacher=null" style="background:rgba(255,69,58,0.07);border:1px solid rgba(255,69,58,0.2);border-radius:8px;padding:5px 12px;color:#ff453a;font-size:0.79rem;cursor:pointer">Logout</button>
+  `)+`
+  <div style="max-width:980px;margin:0 auto;padding:1.8rem 1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem">
+      <div>
+        <h1 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#00d4ff,#9b5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">My Classes</h1>
+        <p id="dash-sub" style="color:rgba(232,234,240,0.5);font-size:0.81rem;margin-top:2px">Loading from cloud...</p>
+      </div>
+      <button class="btn" onclick="showNewClass()">+ New Class</button>
+    </div>
+    <div id="new-cls-form" style="display:none;margin-bottom:1.1rem"></div>
+    <div id="cls-list"><div style="text-align:center;padding:4rem"><div class="spinner" style="width:36px;height:36px;margin:0 auto"></div><p style="color:rgba(232,234,240,0.5);margin-top:1rem;font-size:0.85rem">Loading from cloud...</p></div></div>
+  </div>`;
+  if(_clsUnsub)_clsUnsub();
+  _clsUnsub=FB.watchClasses(state.teacher.id,classes=>{
+    const hd=$("dash-sub");if(hd)hd.textContent=classes.length+" class"+(classes.length!==1?"es":"")+" · ☁️ Cloud Synced";
+    const list=$("cls-list");if(!list)return;
+    if(classes.length===0){list.innerHTML=`<div style="text-align:center;padding:5rem 2rem;color:rgba(232,234,240,0.25)"><div style="font-size:3.5rem;margin-bottom:0.75rem">📚</div><p style="font-family:'Syne',sans-serif;font-weight:700;color:rgba(232,234,240,0.5);margin-bottom:0.4rem">No classes yet</p><p style="font-size:0.82rem">Click "+ New Class" to get started</p></div>`;return;}
+    list.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:1rem">
+      ${classes.map(c=>{
+        const hset=new Set(c.hols||[]);const days=Object.keys(c.att||{}).filter(d=>!hset.has(d)).length;
+        return`<div onclick="openClass('${c.id}')" class="ch" style="background:rgba(255,255,255,0.028);border:1px solid rgba(0,212,255,0.14);border-radius:14px;padding:1.3rem;cursor:pointer;position:relative;backdrop-filter:blur(10px);transition:all 0.25s">
+          <button onclick="event.stopPropagation();delClass('${c.id}')" style="position:absolute;top:10px;right:10px;background:transparent;border:none;cursor:pointer;color:rgba(255,69,58,0.4);font-size:1rem;padding:4px;border-radius:6px;transition:color 0.2s" onmouseover="this.style.color='#ff453a'" onmouseout="this.style.color='rgba(255,69,58,0.4)'">🗑</button>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.45rem;padding-right:1.5rem">${c.name}</h3>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.16);border-radius:6px;padding:2px 10px;margin-bottom:0.7rem">
+            <span style="font-size:0.68rem;color:rgba(0,212,255,0.55);letter-spacing:0.08em">CODE</span>
+            <span style="font-size:0.82rem;font-weight:700;color:#00d4ff;letter-spacing:0.12em;text-shadow:0 0 8px rgba(0,212,255,0.5)">${c.code}</span>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <span style="background:rgba(255,255,255,0.04);border-radius:7px;padding:3px 10px;font-size:0.78rem;color:rgba(232,234,240,0.5)">👥 ${c.students.length}</span>
+            <span style="background:rgba(255,255,255,0.04);border-radius:7px;padding:3px 10px;font-size:0.78rem;color:rgba(232,234,240,0.5)">📅 ${days} days</span>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+    state._classes=classes;
+  });
+  state.unsub=_clsUnsub;
+}
+function showNewClass(){
+  const f=$("new-cls-form");f.style.display="block";
+  f.innerHTML=`<div class="card neon"><div class="lbl">Class Name</div><div style="display:flex;gap:0.55rem;flex-wrap:wrap;margin-top:6px"><input class="inp" id="nc-name" placeholder="e.g. BSc CS 3rd Year" style="flex:1;min-width:180px" autofocus onkeydown="if(event.key==='Enter')doCreateClass()"/><button class="btn" id="nc-btn" onclick="doCreateClass()">Create</button><button class="btn ghost" onclick="$('new-cls-form').style.display='none'">Cancel</button></div><div id="nc-err"></div></div>`;
+}
+async function doCreateClass(){
+  const nm=$("nc-name").value.trim(),err=$("nc-err");err.innerHTML="";
+  if(!nm)return err.innerHTML=`<div class="err">⚠️ Enter a class name.</div>`;
+  const btn=$("nc-btn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>`;
+  try{await FB.saveClass(state.teacher.id,{id:uid(),name:nm,code:code6(),students:[],att:{},hols:[]});$("new-cls-form").style.display="none";}
+  catch{btn.disabled=false;btn.innerHTML="Create";err.innerHTML=`<div class="err">⚠️ Save failed.</div>`;}
+}
+async function delClass(cid){
+  if(!confirm("Delete this class? All data will be permanently deleted."))return;
+  try{await FB.deleteClass(state.teacher.id,cid);}catch{alert("Delete failed.");}
+}
+function openClass(cid){state.openCls=cid;nav("class");}
+
+/* CLASS PAGE */
+let _attTmp={},_classUnsub=null;
+function renderClass(){
+  const tid=state.teacher.id,cid=state.openCls;
+  $("app").innerHTML=`<div id="cls-topbar"></div>
+  <div id="saving-toast" style="display:none;position:fixed;bottom:20px;right:20px;background:rgba(0,212,255,0.1);border:1px solid #00d4ff;border-radius:10px;padding:8px 16px;color:#00d4ff;font-size:0.8rem;z-index:200;backdrop-filter:blur(12px)">☁️ Saving...</div>
+  <div style="display:flex;gap:0.4rem;padding:1.1rem 1.2rem 0;max-width:900px;margin:0 auto;flex-wrap:wrap" id="cls-tabs"></div>
+  <div style="max-width:900px;margin:0 auto;padding:1.1rem 1.2rem" id="cls-body"></div>`;
+  if(_classUnsub)_classUnsub();
+  _classUnsub=FB.watchClasses(tid,classes=>{
+    state._classes=classes;
+    const cls=classes.find(c=>c.id===cid);if(!cls)return;
+    state._cls=cls;
+    const tb=$("cls-topbar");
+    if(tb)tb.innerHTML=topbar("()=>nav('dashboard')",`<div style="display:flex;align-items:center;gap:9px"><div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.93rem">${cls.name}</div><div style="font-size:0.69rem;color:#00d4ff;letter-spacing:0.1em">CODE: ${cls.code}</div></div><button onclick="nav('dashboard')" style="background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.22);border-radius:8px;padding:5px 12px;color:#00d4ff;font-size:0.81rem;cursor:pointer">← Back</button></div>`);
+    renderClassTabs(cls,classes);
+  });
+  state.unsub=_classUnsub;
+  state._activeTab="students";
+  state._date=todayStr();
+}
+function renderClassTabs(cls,allCls){
+  const tabs=[["students","👥 Students"],["attendance","✅ Attendance"],["summary","📊 Summary"],["datesearch","📅 Date Search"]];
+  const tb=$("cls-tabs");
+  if(tb)tb.innerHTML=tabs.map(t=>`<button class="tab-btn${state._activeTab===t[0]?' active':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("");
+  renderTabBody(cls,allCls);
+}
+function setTab(t){state._activeTab=t;if(state._cls)renderClassTabs(state._cls,state._classes||[]);}
+function showToast(){const t=$("saving-toast");if(t){t.style.display="block";setTimeout(()=>t.style.display="none",1500);}}
+async function saveClass(patch){
+  const cls=state._cls;if(!cls)return;
+  showToast();
+  try{await FB.saveClass(state.teacher.id,{...cls,...patch});}catch{alert("Save failed.");}
+}
+function renderTabBody(cls,allCls){
+  const body=$("cls-body");if(!body)return;
+  if(state._activeTab==="students") renderStudents(cls,allCls,body);
+  else if(state._activeTab==="attendance") renderAttendance(cls,body);
+  else if(state._activeTab==="summary") renderSummary(cls,body);
+  else if(state._activeTab==="datesearch") renderDateSearch(cls,body);
+}
+
+function renderStudents(cls,allCls,body){
+  body.innerHTML=`
+  <div class="card neon" style="margin-bottom:1rem">
+    <div class="lbl">Add New Student</div>
+    <div style="display:flex;gap:0.55rem;flex-wrap:wrap;margin-top:6px">
+      <input class="inp" id="ns-inp" placeholder="Student full name" style="flex:1;min-width:180px" autofocus onkeydown="if(event.key==='Enter')addStudent()"/>
+      <button class="btn" onclick="addStudent()">Add</button>
+    </div>
+    <div id="ns-msg"></div>
+  </div>
+  ${cls.students.length===0?`<div style="text-align:center;padding:2.5rem;color:rgba(232,234,240,0.25)"><div style="font-size:2.5rem;margin-bottom:0.5rem">👤</div><p>No students yet. Add above!</p></div>`:`
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.93rem;margin-bottom:0.85rem;color:#00d4ff">Students (${cls.students.length})</div>
+    ${cls.students.map((s,i)=>{const p=pct(s.id,cls.att,cls.hols);const g=grade(p);return`
+    <div class="stu-row">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="width:25px;height:25px;border-radius:50%;background:rgba(0,212,255,0.1);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:#00d4ff;flex-shrink:0">${i+1}</span>
+        <span style="font-weight:500;font-size:0.9rem">${s.name}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${g?`<span style="background:${g.bg};border:1px solid ${g.b};border-radius:6px;padding:2px 9px;font-size:0.77rem;font-weight:600;color:${g.c}">${p}%</span>`:`<span style="font-size:0.74rem;color:rgba(232,234,240,0.25)">No data</span>`}
+        ${allCls.length>1?`<button onclick="moveStudent('${s.id}')" style="background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);border-radius:7px;padding:3px 9px;color:#00d4ff;font-size:0.74rem;cursor:pointer">Move</button>`:""}
+        <button onclick="removeStudent('${s.id}')" style="background:transparent;border:none;cursor:pointer;color:rgba(255,69,58,0.45);font-size:0.9rem;padding:2px 5px;border-radius:6px" onmouseover="this.style.color='#ff453a'" onmouseout="this.style.color='rgba(255,69,58,0.45)'">✕</button>
+      </div>
+    </div>`;}).join("")}
+  </div>`}`;
+}
+async function addStudent(){
+  const inp=$("ns-inp"),msg=$("ns-msg");if(!inp)return;
+  const n=inp.value.trim();msg.innerHTML="";
+  if(!n)return msg.innerHTML=`<div class="err">⚠️ Enter student name.</div>`;
+  const cls=state._cls;
+  if(cls.students.find(s=>s.name.toLowerCase()===n.toLowerCase()))return msg.innerHTML=`<div class="err">⚠️ Student already exists.</div>`;
+  await saveClass({students:[...cls.students,{id:uid(),name:n}]});
+  inp.value="";msg.innerHTML=`<div class="ok">✅ ${n} added!</div>`;setTimeout(()=>{if($("ns-msg"))$("ns-msg").innerHTML="";},2500);inp.focus();
+}
+async function removeStudent(sid){
+  if(!confirm("Remove this student?"))return;
+  const cls=state._cls;
+  const students=cls.students.filter(s=>s.id!==sid);
+  const att={...cls.att};Object.keys(att).forEach(d=>{if(att[d]){att[d]={...att[d]};delete att[d][sid];}});
+  await saveClass({students,att});
+}
+function moveStudent(sid){
+  const cls=state._cls,allCls=state._classes||[];
+  const others=allCls.filter(c=>c.id!==cls.id);if(!others.length)return;
+  const stu=cls.students.find(s=>s.id===sid);
+  const modal=document.createElement("div");
+  modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;z-index:200;padding:1.5rem";
+  modal.innerHTML=`<div style="background:#0a0c1a;border:1px solid rgba(0,212,255,0.28);border-radius:16px;padding:1.4rem;width:100%;max-width:340px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;color:#00d4ff;margin-bottom:0.4rem">Move Student</div>
+    <p style="color:rgba(232,234,240,0.5);font-size:0.83rem;margin-bottom:1rem">Move <b style="color:#e8eaf0">${stu.name}</b> to:</p>
+    <div style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.85rem">
+      ${others.map(c=>`<button onclick="doMove('${sid}','${c.id}')" style="padding:10px 13px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.16);border-radius:9px;color:#e8eaf0;font-size:0.88rem;cursor:pointer;text-align:left" onmouseover="this.style.background='rgba(0,212,255,0.12)';this.style.color='#00d4ff'" onmouseout="this.style.background='rgba(0,212,255,0.05)';this.style.color='#e8eaf0'">${c.name}</button>`).join("")}
+    </div>
+    <button class="btn ghost full" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+async function doMove(sid,tid2){
+  const cls=state._cls,allCls=state._classes||[];
+  const stu=cls.students.find(s=>s.id===sid);
+  const tgt=allCls.find(c=>c.id===tid2);if(!tgt||!stu)return;
+  document.querySelector('[style*="position:fixed"][style*="inset"]')?.remove();
+  await FB.saveClass(state.teacher.id,{...cls,students:cls.students.filter(s=>s.id!==sid)});
+  await FB.saveClass(state.teacher.id,{...tgt,students:[...tgt.students,stu]});
+}
+
+function renderAttendance(cls,body){
+  const date=state._date;
+  const isHol=(cls.hols||[]).includes(date);
+  if(!_attTmp[date]) _attTmp[date]={...((cls.att||{})[date]||{})};
+  const tmp=_attTmp[date];
+  const pCnt=Object.values(tmp).filter(Boolean).length;
+  body.innerHTML=`
+  <div class="card neon" style="margin-bottom:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+      <div><div class="lbl">Date</div><input type="date" id="att-date" value="${date}" onchange="state._date=this.value;_attTmp={};setTab('attendance')"/></div>
+      <button onclick="toggleHoliday()" style="background:${isHol?'rgba(255,214,10,0.1)':'rgba(255,255,255,0.04)'};border:1px solid ${isHol?'rgba(255,214,10,0.38)':'rgba(0,212,255,0.18)'};border-radius:9px;padding:8px 14px;color:${isHol?'#ffd60a':'rgba(232,234,240,0.5)'};font-weight:600;font-size:0.84rem;cursor:pointer">${isHol?"🏖️ Holiday (tap to remove)":"🏖️ Mark Holiday"}</button>
+    </div>
+    ${isHol?`<div style="margin-top:0.7rem;background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.22);border-radius:9px;padding:8px 12px;color:#ffd60a;font-size:0.82rem">Holiday — not counted in attendance %</div>`:""}
+  </div>
+  ${isHol?"":cls.students.length===0?`<div style="text-align:center;padding:2rem;color:rgba(232,234,240,0.25);font-size:0.87rem">Add students first.</div>`:`
+  <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;align-items:center">
+    <button onclick="setAllPresent()" style="background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.25);border-radius:8px;padding:6px 13px;color:#39ff14;font-size:0.81rem;font-weight:600;cursor:pointer">✅ All Present</button>
+    <button onclick="setAllAbsent()" style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.25);border-radius:8px;padding:6px 13px;color:#ff453a;font-size:0.81rem;font-weight:600;cursor:pointer">❌ All Absent</button>
+    <div style="margin-left:auto;display:flex;gap:10px;font-size:0.82rem">
+      <span style="color:#39ff14">✅ ${pCnt}</span><span style="color:#ff453a">❌ ${cls.students.length-pCnt}</span>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    ${cls.students.map((s,i)=>{const isP=tmp[s.id]===true;const p=pct(s.id,cls.att,cls.hols);const g=grade(p);return`
+    <div class="att-row ${isP?'present':'absent'}" onclick="toggleAtt('${s.id}')">
+      <div class="chk ${isP?'on':'off'}">${isP?'<span style="color:#04060f;font-size:11px;font-weight:900">✓</span>':''}</div>
+      <span style="font-size:0.73rem;color:rgba(232,234,240,0.25);width:18px;flex-shrink:0">${i+1}</span>
+      <span style="flex:1;font-weight:500;font-size:0.9rem;color:${isP?'#e8eaf0':'rgba(232,234,240,0.45)'}">${s.name}</span>
+      ${g?`<span style="font-size:0.75rem;font-weight:700;color:${g.c};background:${g.bg};border:1px solid ${g.b};border-radius:6px;padding:2px 8px;flex-shrink:0">${p}%</span>`:""}
+      <span style="font-size:0.78rem;font-weight:600;color:${isP?'#39ff14':'#ff453a'};flex-shrink:0;min-width:50px;text-align:right">${isP?"Present":"Absent"}</span>
+    </div>`;}).join("")}
+  </div>
+  <button class="btn full" id="save-att-btn" onclick="doSaveAtt()">Save Attendance ☁️</button>`}`;
+}
+function toggleAtt(sid){
+  const date=state._date;
+  if(!_attTmp[date])_attTmp[date]={};
+  _attTmp[date][sid]=!_attTmp[date][sid];
+  if(state._cls)renderAttendance(state._cls,$("cls-body"));
+}
+function setAllPresent(){const cls=state._cls;if(!cls)return;const t={};cls.students.forEach(s=>t[s.id]=true);_attTmp[state._date]=t;renderAttendance(cls,$("cls-body"));}
+function setAllAbsent(){_attTmp[state._date]={};if(state._cls)renderAttendance(state._cls,$("cls-body"));}
+async function toggleHoliday(){
+  const cls=state._cls,date=state._date;if(!cls)return;
+  const h=cls.hols||[];
+  await saveClass({hols:h.includes(date)?h.filter(d=>d!==date):[...h,date]});
+}
+async function doSaveAtt(){
+  const btn=$("save-att-btn");if(btn){btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Saving...`;}
+  await saveClass({att:{...(state._cls.att||{}),[state._date]:{..._attTmp[state._date]||{}}}});
+  if(btn){btn.innerHTML="✅ Saved to Cloud!";setTimeout(()=>{if(btn){btn.disabled=false;btn.innerHTML="Save Attendance ☁️";}},2000);}
+}
+
+function renderSummary(cls,body){
+  if(cls.students.length===0){body.innerHTML=`<div style="text-align:center;padding:2.5rem;color:rgba(232,234,240,0.25)">No students yet.</div>`;return;}
+  body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.7rem">
+  ${cls.students.map((s,i)=>{
+    const p=pct(s.id,cls.att,cls.hols),g=grade(p);
+    const hset=new Set(cls.hols||[]);const days=Object.keys(cls.att||{}).filter(d=>!hset.has(d));const pD=days.filter(d=>(cls.att[d]||{})[s.id]);
+    return`<div style="background:${g?g.bg:'rgba(255,255,255,0.028)'};border:1px solid ${g?g.b:'rgba(0,212,255,0.14)'};border-radius:12px;padding:1rem">
+      <div style="font-size:0.68rem;color:rgba(232,234,240,0.25);margin-bottom:3px">#${i+1}</div>
+      <div style="font-weight:600;font-size:0.88rem;margin-bottom:5px;word-break:break-word">${s.name}</div>
+      ${g?`<div style="font-size:1.5rem;font-weight:800;font-family:'Syne',sans-serif;color:${g.c};text-shadow:0 0 16px ${g.c}50">${p}%</div><div style="font-size:0.72rem;color:${g.c};font-weight:600;margin-top:1px">${g.t}</div><div style="font-size:0.7rem;color:rgba(232,234,240,0.25);margin-top:4px">${pD.length}/${days.length} days</div>`:`<div style="font-size:0.78rem;color:rgba(232,234,240,0.25)">No data</div>`}
+    </div>`;
+  }).join("")}
+  </div>`;
+}
+
+function renderDateSearch(cls,body){
+  const date=state._date;
+  const isHol=(cls.hols||[]).includes(date);
+  const attDay=(cls.att||{})[date];
+  body.innerHTML=`
+  <div class="card neon" style="margin-bottom:1rem">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;color:#00d4ff;margin-bottom:0.85rem">🔍 Search by Date</div>
+    <div class="lbl">Select Date</div>
+    <input type="date" value="${date}" style="margin-top:6px" onchange="state._date=this.value;setTab('datesearch')"/>
+  </div>
+  ${isHol?`<div class="card"><div style="background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.22);border-radius:9px;padding:10px 14px;color:#ffd60a;font-size:0.85rem">🏖️ This date is marked as a Holiday.</div></div>`
+  :attDay?`<div class="card neon">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem">
+      <div style="font-family:'Syne',sans-serif;font-weight:700">Attendance — ${date}</div>
+      <div style="display:flex;gap:8px;font-size:0.8rem">
+        <span style="color:#39ff14">✅ ${cls.students.filter(s=>attDay[s.id]).length} Present</span>
+        <span style="color:#ff453a">❌ ${cls.students.filter(s=>!attDay[s.id]).length} Absent</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.38rem">
+      ${cls.students.map((s,i)=>{const isP=attDay[s.id]===true;return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:${isP?'rgba(57,255,20,0.05)':'rgba(255,255,255,0.02)'};border:1px solid ${isP?'rgba(57,255,20,0.2)':'rgba(0,212,255,0.14)'};border-radius:9px">
+        <div style="display:flex;align-items:center;gap:9px"><span style="width:24px;height:24px;border-radius:50%;background:rgba(0,212,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#00d4ff;flex-shrink:0">${i+1}</span><span style="font-weight:500;font-size:0.9rem">${s.name}</span></div>
+        <span style="font-size:0.79rem;font-weight:600;color:${isP?'#39ff14':'#ff453a'}">${isP?"✅ Present":"❌ Absent"}</span>
+      </div>`;}).join("")}
+    </div>
+  </div>`:`<div class="card"><div style="text-align:center;padding:1.5rem;color:rgba(232,234,240,0.25);font-size:0.87rem">No attendance recorded for this date.</div></div>`}`;
+}
+
+// ── ROUTER ──
+function render(){
+  window.scrollTo(0,0);
+  if(state.page==="landing") renderLanding();
+  else if(state.page==="setup") renderSetup();
+  else if(state.page==="login"||state.page==="student") renderLogin(state.page==="student"?"student":"teacher");
+  else if(state.page==="dashboard") renderDashboard();
+  else if(state.page==="class") renderClass();
+}
+
+render();
+</script>
+</body>
+</html>
